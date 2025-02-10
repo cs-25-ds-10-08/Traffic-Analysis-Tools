@@ -1,0 +1,1 @@
+!tls && tcp.port == 4444 && tcp.flags == 0x010 && !tcp.analysis.keep_alive && !tcp.analysis.keep_alive_ack
