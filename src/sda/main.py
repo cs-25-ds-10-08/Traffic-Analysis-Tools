@@ -4,21 +4,32 @@ import json
 from pandas import DataFrame
 import argparse
 import re
+import random
 
 
 def main():
     settings, data = init()
     counter: dict[int, int] = {}
+    time: float = 0
 
     for _, row in data.iterrows():
+        if row.Time < time:
+            continue
+        time = row.Time
+
         destination: int = get_src_and_dst_port(row.Info)["dst"]
         if destination == settings["target"]:
             # Time from target sends to now + epoch
-            data.loc[(row.Time < data.Time) & (data.Time <= row.Time + settings["epoch"])]
-            update_counts(1, counter, data, settings)
+            update_counts(1, counter, data.loc[(row.Time < data.Time) & (data.Time <= row.Time + settings["epoch"])], settings)
+            
+            rand_scalar: float = random.uniform(0, settings["epoch"])
             # Time from end of last timeframe to now + epoch
-            data.loc[(row.Time + settings["epoch"] < data.Time) & (data.Time <= row.Time + 2 * settings["epoch"])]
-            update_counts(-1, counter, data, settings)
+            update_counts(-1, counter, data.loc[
+                          (row.Time + settings["epoch"] + rand_scalar < data.Time) 
+                          & (data.Time <= row.Time + 2 * settings["epoch"] + rand_scalar)
+                          ], settings)
+
+            time += settings["epoch"]
 
     sorted_counter = list(
         sorted(counter.items(), key=lambda item: item[1], reverse=True)
@@ -26,6 +37,7 @@ def main():
     print(
         f"Target: {settings['target']}\nMost likely: {sorted_counter[0][0]}\nActual: {settings['actual']}"
     )
+    print(sorted_counter)
 
 
 def update_counts(inc: int, counter: dict[int, int], data: DataFrame, settings: dict[str, int]):
