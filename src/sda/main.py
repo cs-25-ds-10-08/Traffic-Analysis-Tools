@@ -6,30 +6,11 @@ import argparse
 import re
 
 
+
 def main():
-    parser = argparse.ArgumentParser(
-        prog="Statistical Disclosure Attack Analysis Tool",
-        description="Performs an offline Statistical Disclosure Attack",
-    )
-    parser.add_argument(
-        "--data-path",
-        type=str,
-        required=True,
-        help="The path to the data in csv format",
-    )
-    parser.add_argument(
-        "--settings-path",
-        type=str,
-        required=True,
-        help="The path to the settings in json format",
-    )
-
-    options = parser.parse_args(sys.argv[1:])
-    with open(options.settings_path) as file:
-        settings: dict[str, int] = json.load(file)
-    data: DataFrame = pd.read_csv(options.data_path)
-
+    settings, data = init()
     counter: dict[int, int] = {}
+
     for _, row in data.iterrows():
         destination: int = get_src_and_dst_port(row.Info)["dst"]
         if destination == settings["target"]:
@@ -75,6 +56,31 @@ def get_src_and_dst_port(info: str) -> dict[str, int]:
     # If this fails, you most likely have an error in your dataset
     res = re.findall(r"(\d+)\s*>\s*(\d+).*", info)[0]
     return {"src": int(res[0]), "dst": int(res[1])}
+
+def init() -> tuple[dict[str, int], DataFrame]:
+    parser = argparse.ArgumentParser(
+        prog="Statistical Disclosure Attack Analysis Tool",
+        description="Performs an offline Statistical Disclosure Attack",
+    )
+    parser.add_argument(
+        "--data-path",
+        type=str,
+        required=True,
+        help="The path to the data in csv format",
+    )
+    parser.add_argument(
+        "--settings-path",
+        type=str,
+        required=True,
+        help="The path to the settings in json format",
+    )
+
+    options = parser.parse_args(sys.argv[1:])
+    with open(options.settings_path) as file:
+        settings: dict[str, int] = json.load(file)
+    data: DataFrame = pd.read_csv(options.data_path)
+    
+    return (settings, data)
 
 
 if __name__ == "__main__":
