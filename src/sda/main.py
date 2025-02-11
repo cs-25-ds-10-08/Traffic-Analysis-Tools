@@ -20,24 +20,26 @@ def main():
         destination: int = get_src_and_dst_port(row.Info)["dst"]
         if destination == settings["target"]:
             # Time from target sends to now + epoch
-            update_counts(1, counter, data.loc[(row.Time < data.Time) & (data.Time <= row.Time + settings["epoch"])], settings)
-            
+            update_counts(
+                1, counter, data.loc[(row.Time < data.Time) & (data.Time <= row.Time + settings["epoch"])], settings
+            )
+
             rand_scalar: float = random.uniform(0, settings["epoch"])
             # Time from end of last timeframe to now + epoch
-            update_counts(-1, counter, data.loc[
-                          (row.Time + settings["epoch"] + rand_scalar < data.Time) 
-                          & (data.Time <= row.Time + 2 * settings["epoch"] + rand_scalar)
-                          ], settings)
+            update_counts(
+                -1,
+                counter,
+                data.loc[
+                    (row.Time + settings["epoch"] + rand_scalar < data.Time)
+                    & (data.Time <= row.Time + 2 * settings["epoch"] + rand_scalar)
+                ],
+                settings,
+            )
 
             time += settings["epoch"]
 
-    sorted_counter = list(
-        sorted(counter.items(), key=lambda item: item[1], reverse=True)
-    )
-    print(
-        f"Target: {settings['target']}\nMost likely: {sorted_counter[0][0]}\nActual: {settings['actual']}"
-    )
-    print(sorted_counter)
+    sorted_counter = list(sorted(counter.items(), key=lambda item: item[1], reverse=True))
+    print(f"Target: {settings['target']}\nMost likely: {sorted_counter[0][0]}\nActual: {settings['actual']}")
 
 
 def update_counts(inc: int, counter: dict[int, int], data: DataFrame, settings: dict[str, int]):
@@ -78,7 +80,7 @@ def init() -> tuple[dict[str, int], DataFrame]:
     with open(options.settings_path) as file:
         settings: dict[str, int] = json.load(file)
     data: DataFrame = pd.read_csv(options.data_path)
-    
+
     return (settings, data)
 
 
