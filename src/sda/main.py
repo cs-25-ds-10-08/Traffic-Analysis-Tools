@@ -6,7 +6,6 @@ import argparse
 import re
 
 
-
 def main():
     settings, data = init()
     counter: dict[int, int] = {}
@@ -14,15 +13,12 @@ def main():
     for _, row in data.iterrows():
         destination: int = get_src_and_dst_port(row.Info)["dst"]
         if destination == settings["target"]:
-            data_epoch = data.loc[
-                (row.Time < data.Time) & (data.Time <= row.Time + settings["epoch"])
-            ]
-            add_epoch(data_epoch, counter, settings["target"], settings["server_port"])
-            data_epoch = data.loc[
-                (row.Time + settings["epoch"] < data.Time)
-                & (data.Time <= row.Time + 2 * settings["epoch"])
-            ]
-            sub_epoch(data_epoch, counter, settings["target"], settings["server_port"])
+            # Time from target sends to now + epoch
+            data.loc[(row.Time < data.Time) & (data.Time <= row.Time + settings["epoch"])]
+            update_counts(1, counter, data, settings)
+            # Time from end of last timeframe to now + epoch
+            data.loc[(row.Time + settings["epoch"] < data.Time) & (data.Time <= row.Time + 2 * settings["epoch"])]
+            update_counts(-1, counter, data, settings)
 
     sorted_counter = list(
         sorted(counter.items(), key=lambda item: item[1], reverse=True)
@@ -32,30 +28,21 @@ def main():
     )
 
 
-def add_epoch(data: DataFrame, counter: dict[int, int], target: int, server_port: int):
+def update_counts(inc: int, counter: dict[int, int], data: DataFrame, settings: dict[str, int]):
     for _, row in data.iterrows():
         destination: int = get_src_and_dst_port(row.Info)["dst"]
-        if target != destination != server_port:
+        if settings["target"] != destination != settings["server_port"]:
             if destination in counter.keys():
-                counter[destination] += 1
+                counter[destination] += inc
             else:
-                counter[destination] = 1
-
-
-def sub_epoch(data: DataFrame, counter: dict[int, int], target: int, server_port: int):
-    for _, row in data.iterrows():
-        destination: int = get_src_and_dst_port(row.Info)["dst"]
-        if target != destination != server_port:
-            if destination in counter.keys():
-                counter[destination] -= 1
-            else:
-                counter[destination] = -1
+                counter[destination] = inc
 
 
 def get_src_and_dst_port(info: str) -> dict[str, int]:
     # If this fails, you most likely have an error in your dataset
     res = re.findall(r"(\d+)\s*>\s*(\d+).*", info)[0]
     return {"src": int(res[0]), "dst": int(res[1])}
+
 
 def init() -> tuple[dict[str, int], DataFrame]:
     parser = argparse.ArgumentParser(
