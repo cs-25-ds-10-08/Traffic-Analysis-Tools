@@ -1,3 +1,6 @@
+*.pcapng
+
+# AUTO GENEREATED BY UV
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
