@@ -1,5 +1,5 @@
 [project]
-name = "sda"
+name = "tats"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -11,13 +11,12 @@ dependencies = [
     "mypy>=1.15.0",
     "pandas",
     "pandas-stubs",
+    "pygmtools>=0.5.3",
     "ruff>=0.9.6",
 ]
 
 [project.scripts]
-sda = "sda:main.main"
-pmda = "pmda:main.main"
-nsda = "nsda:main.main"
+tats = "tats:executor"
 
 [build-system]
 requires = ["hatchling"]
