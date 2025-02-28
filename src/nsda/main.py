@@ -10,10 +10,5 @@ pygm.set_backend('numpy')
 def main(settings: dict[str, int], data: DataFrame):
     profiles = sda_profiling(settings, data)
         
-    df = DataFrame.from_dict(profiles)
-    df.fillna(0, inplace=True)
-    data = pygm.sinkhorn(df.to_numpy())
-    df_new = DataFrame(data, index=df.index, columns=df.columns).to_dict()
-    
-    print_result(df_new, settings)
+    print_result(DataFrame(pygm.sinkhorn(profiles.to_numpy()), index=profiles.index, columns=profiles.columns).to_dict(), settings)
 
