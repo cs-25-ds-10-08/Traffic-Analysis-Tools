@@ -35,4 +35,5 @@ def init(name: str, *, description: str = "") -> tuple[dict[str, int], DataFrame
         settings: dict[str, int] = json.load(file)
     data: DataFrame = pd.read_csv(options.data_path)
 
+    print(f"Running {name}")
     return (settings, data)

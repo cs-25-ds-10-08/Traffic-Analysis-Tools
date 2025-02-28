@@ -16,6 +16,8 @@ dependencies = [
 
 [project.scripts]
 sda = "sda:main.main"
+pmda = "pmda:main.main"
+nsda = "nsda:main.main"
 
 [build-system]
 requires = ["hatchling"]

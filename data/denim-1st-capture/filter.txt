@@ -1,0 +1,1 @@
+!tls && tcp.flags.syn != 1 && tcp.flags.fin != 1 && tcp.port != 8081
