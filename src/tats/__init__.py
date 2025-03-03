@@ -3,11 +3,12 @@ import sys
 import json
 import pandas as pd
 
+from pathlib import Path
+
 from nsda.main import main as nsda_main
 from pmda.main import main as pmda_main
 from simple_sda.main import main as ssda_main
 from sda.main import main as sda_main
-
 
 
 def executor():
@@ -22,22 +23,16 @@ def executor():
         help="The tool to be executed",
     )
     parser.add_argument(
-        "--data-path",
-        type=str,
+        "--path",
+        type=Path,
         required=True,
-        help="The path to the data in csv format",
+        help="The path to folder which MUST contain a data.csv and settings.json",
     )
-    parser.add_argument(
-        "--settings-path",
-        type=str,
-        required=True,
-        help="The path to the settings in json format",
-    )
-    
+
     options = parser.parse_args(sys.argv[1:])
-    with open(options.settings_path) as file:
+    with open(options.path / "settings.json") as file:
         settings: dict[str, int] = json.load(file)
-    data: pd.DataFrame = pd.read_csv(options.data_path)
+    data: pd.DataFrame = pd.read_csv(options.path / "data.csv")
 
     match options.tool:
         case "nsda":
