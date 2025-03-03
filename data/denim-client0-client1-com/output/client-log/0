@@ -1,0 +1,200 @@
+ // 2025-03-03T09:00:37.082Z [ExperimentClient] [32minfo[39m: Connected to wss://127.0.0.1:8081
+ // 2025-03-03T09:00:37.131Z [ExperimentClient] [32minfo[39m: ##SERVER_INSTRUCTIONS##
+{"client_name":1,"denim_server_address":"wss://127.0.0.1:8080/","duration":30000,"event_ticks":1000,"regular_messages":1,"deniable_messages":1,"regular_ephemerals":10,"deniable_ephemerals":20,"deniable_probability":0.1,"regular_probability":1,"message_length":1,"client_code":"\nthis.silent = (isDeniable) => {\n    console.log(`[${classArgs.clientName.name()}] In behavior: SILENT`);\n}\n\nthis.messageReceived = async (message) => {\n    if(message) { //response received\n        if(message.deniable){\n\n            if(classArgs.deniableResponseBehavior=='group') { // If we're a leader we have to forward\n                const groups = classArgs.deniableGroups;\n                for(const group of groups) { // Check if we're leader for any of the groups\n                    if(classArgs.clientName.name() == group.leader.name()) {\n                        console.log(`[${classArgs.clientName.name()}] forwarding to group members`);\n                        for(const member of group.members) {\n                            let content = message.message;\n                            console.log(`Forwarding ${content} to ${member.name()}`);\n                            await classArgs.send(new classArgs.Message(content, classArgs.clientName, member, message.deniable, classArgs.Constants.MESSAGE_TYPE_TEXT));  \n                        }\n                    } \n                }\n            } \n\n            await this[classArgs.deniableResponseBehavior](true);\n        } else {\n\n            if(classArgs.regularResponseBehavior=='group') { // If we're a leader we have to forward\n                const groups = classArgs.regularGroups;\n                for(const group of groups) { // Check if we're leader for any of the groups\n                    if(classArgs.clientName.name() == group.leader.name()) {\n                        console.log(`[${classArgs.clientName.name()}] forwarding to ${group.members.length} group members`);\n                        for(const member of group.members) {\n                            let content = message.message;\n                            console.log(`Forwarding ${content} to ${member.name()}`);\n                            await classArgs.send(new classArgs.Message(content, classArgs.clientName, member, message.deniable, classArgs.Constants.MESSAGE_TYPE_TEXT));  \n                        }\n                    } \n                }\n            } \n            await this[classArgs.regularResponseBehavior](false);\n        }\n    }\n}\n\nthis.group = async (isDeniable) => {\n    console.log(`[${classArgs.clientName.name()}] In behavior: GROUP, called with deniable: ${isDeniable}`);\n    let groups;\n    if(isDeniable){\n        groups = classArgs.deniableGroups;\n    } else {\n        groups = classArgs.regularGroups;\n    }\n\n    for(const group of groups) { // Members decide for each group whether to send a message or not\n\n        if(classArgs.clientName.name() != group.leader.name()) {\n            const probabilityToSend = 1./(group.members.length+1); // +1 since we've filtered out ourselves\n            const sendNow = classArgs.Util.doWithProbability(probabilityToSend);\n\n            if(sendNow){\n                console.log(`[${classArgs.clientName.name()}] sending to group leader ${group.leader.name()} (probability: ${probabilityToSend})`);\n                let content = `${classArgs.Util.getDelimitedTimestamp()}${classArgs.Util.getQuote()}`;\n                await classArgs.send(new classArgs.Message(content, classArgs.clientName, group.leader, isDeniable, classArgs.Constants.MESSAGE_TYPE_TEXT));  \n            } else {\n                console.log(`[${classArgs.clientName.name()}] skipping a round (probability: ${probabilityToSend})`);\n            }\n        }\n    }\n}\n\nthis.bazaar = async (isDeniable) => {\n    console.log(`[${classArgs.clientName.name()}] In behavior: BAZAAR, called with parameter ${isDeniable}`);\n    let contacts;\n    if(isDeniable) {\n        contacts = classArgs.deniableContacts;\n    } else {\n        contacts = classArgs.regularContacts;\n    }\n    const toContact = classArgs.Util.choose(contacts);\n    const content = `${classArgs.Util.getDelimitedTimestamp()}${classArgs.Util.getQuote()}`;\n    await classArgs.send(new classArgs.Message(content, classArgs.clientName, toContact, isDeniable, classArgs.Constants.MESSAGE_TYPE_TEXT));\n}\n","regular_response_behavior":"silent","regular_send_behavior":"bazaar","deniable_response_behavior":"silent","deniable_send_behavior":"bazaar","client_addresses_regular":[1,2,3,4],"client_addresses_deniable":[0],"client_addresses_groups_regular":[],"client_addresses_groups_deniable":[]}
+ // 2025-03-03T09:00:37.148Z [ExperimentClient] [32minfo[39m: DenimClient has been initialized
+ // 2025-03-03T09:00:37.162Z [ExperimentClient] [32minfo[39m: Connected to wss://127.0.0.1:8080/
+ // 2025-03-03T09:00:37.187Z [ExperimentClient] [32minfo[39m: ##SERVER_START##
+ // 2025-03-03T09:00:37.187Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 0
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:37.189Z [ExperimentClient] [32minfo[39m: 1 requesting regular key for {"name":"4","deviceId":1}
+ // 2025-03-03T09:00:37.199Z [ExperimentClient] [32minfo[39m: Key response received for user: {"name":"4","deviceId":1}
+ // 2025-03-03T09:00:37.199Z [ExperimentClient] [32minfo[39m: 1 messages queued
+ // 2025-03-03T09:00:37.199Z [ExperimentClient] [32minfo[39m: Sending queued regular message: From: {"name":"1","deviceId":1}, To: {"name":"4","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992437187894##TIMESTAMP_END##Mare's tails and mackerel scales make tall ships take in their sails.
+ // 2025-03-03T09:00:37.199Z [ExperimentClient] [32minfo[39m: Regular session started: true
+ // 2025-03-03T09:00:38.191Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 1004
+[1] In behavior: BAZAAR, called with parameter false
+[1] In behavior: BAZAAR, called with parameter true
+ // 2025-03-03T09:00:38.194Z [ExperimentClient] [32minfo[39m: 1 queuing deniable key request for {"name":"0","deviceId":1}
+ // 2025-03-03T09:00:38.201Z [DenimClient] [32minfo[39m: 1 decrypting prekey (new session) regular from 2
+ // 2025-03-03T09:00:38.203Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"2","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992438191095##TIMESTAMP_END##A fool looks for dung where the cow never browsed.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:39.195Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 2008
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:39.198Z [DenimClient] [32minfo[39m: 1 decrypting prekey (new session) regular from 2
+ // 2025-03-03T09:00:39.199Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"2","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992439193242##TIMESTAMP_END##In shallow waters, shrimps make fools of dragons.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:40.198Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 3011
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:40.199Z [ExperimentClient] [32minfo[39m: 1 requesting regular key for {"name":"3","deviceId":1}
+ // 2025-03-03T09:00:40.207Z [DenimClient] [32minfo[39m: 1 decrypting prekey (new session) regular from 3
+ // 2025-03-03T09:00:40.207Z [ExperimentClient] [32minfo[39m: Key response received for user: {"name":"3","deviceId":1}
+ // 2025-03-03T09:00:40.207Z [ExperimentClient] [32minfo[39m: 2 messages queued
+ // 2025-03-03T09:00:40.207Z [ExperimentClient] [32minfo[39m: Sending queued regular message: From: {"name":"1","deviceId":1}, To: {"name":"3","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992440198558##TIMESTAMP_END##Peace is the one condition of survival in this nuclear age.
+ // 2025-03-03T09:00:40.207Z [ExperimentClient] [32minfo[39m: Regular session started: true
+ // 2025-03-03T09:00:40.211Z [DenimClient] [32minfo[39m: ****Client received deniable key response****
+ // 2025-03-03T09:00:40.212Z [DenimClient] [32minfo[39m: Deniable session started with 0
+ // 2025-03-03T09:00:40.213Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"3","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992440195379##TIMESTAMP_END##You'd think a sociopath assassin wouldn't have a fan following but he does.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:40.213Z [ExperimentClient] [32minfo[39m: Key response received for user: {"name":"0","deviceId":1}
+ // 2025-03-03T09:00:40.213Z [ExperimentClient] [32minfo[39m: Sending queued deniable message: From: {"name":"1","deviceId":1}, To: {"name":"0","deviceId":1}, Deniable: true, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992438193629##TIMESTAMP_END##Everyone is kneaded out of the same dough but not baked in the same oven.
+ // 2025-03-03T09:00:40.213Z [ExperimentClient] [32minfo[39m: Deniable session started: true
+ // 2025-03-03T09:00:41.201Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 4014
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:41.204Z [DenimClient] [32minfo[39m: 1 decrypting prekey (new session) regular from 2
+ // 2025-03-03T09:00:41.205Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"2","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992441199067##TIMESTAMP_END##Suffering is the true cement of love.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:42.205Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 5018
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:42.209Z [DenimClient] [32minfo[39m: 1 decrypting prekey (new session) regular from 4
+ // 2025-03-03T09:00:42.213Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"4","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992442201791##TIMESTAMP_END##When my horse is running good, I don't stop to give him sugar.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:43.209Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 6022
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:43.213Z [DenimClient] [32minfo[39m: 1 decrypting regular from 3
+ // 2025-03-03T09:00:43.215Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"3","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992443205246##TIMESTAMP_END##Sex is part of nature. I go along with nature.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:44.213Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 7026
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:45.215Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 8028
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:46.219Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 9032
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:47.219Z [DenimClient] [32minfo[39m: 1 decrypting prekey (new session) regular from 2
+ // 2025-03-03T09:00:47.220Z [DenimClient] [32minfo[39m: 1 decrypting regular from 3
+ // 2025-03-03T09:00:47.221Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"2","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992447215385##TIMESTAMP_END##A satellite has no conscience.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:47.223Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"3","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992447216165##TIMESTAMP_END##One who knows books has four eyes.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:47.223Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 10036
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:47.225Z [DenimClient] [32minfo[39m: 1 decrypting regular from 4
+ // 2025-03-03T09:00:47.226Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"4","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992447219029##TIMESTAMP_END##I thought clay must feel happy in the good potter's hand.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:48.221Z [DenimClient] [32minfo[39m: 1 decrypting prekey (new session) regular from 2
+ // 2025-03-03T09:00:48.222Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"2","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992448217380##TIMESTAMP_END##A bad workman quarrels with his tools.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:48.225Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 11038
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:49.226Z [DenimClient] [32minfo[39m: 1 decrypting regular from 4
+ // 2025-03-03T09:00:49.227Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"4","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992449223395##TIMESTAMP_END##In shallow waters, shrimps make fools of dragons.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:49.228Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 12041
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:49.228Z [ExperimentClient] [32minfo[39m: 1 requesting regular key for {"name":"2","deviceId":1}
+[1] In behavior: BAZAAR, called with parameter true
+ // 2025-03-03T09:00:49.232Z [DenimClient] [32minfo[39m: 1 decrypting prekey (new session) deniable from 0
+ // 2025-03-03T09:00:49.234Z [DenimClient] [32minfo[39m: Decrypted deniable message: ##TIMESTAMP_START##1740992445210793##TIMESTAMP_END##We all know that small cars are good for us. But so is cod liver oil. And jogging.
+ // 2025-03-03T09:00:49.234Z [ExperimentClient] [32minfo[39m: Key response received for user: {"name":"2","deviceId":1}
+ // 2025-03-03T09:00:49.234Z [ExperimentClient] [32minfo[39m: 3 messages queued
+ // 2025-03-03T09:00:49.234Z [ExperimentClient] [32minfo[39m: Sending queued regular message: From: {"name":"1","deviceId":1}, To: {"name":"2","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992449227579##TIMESTAMP_END##At least, lightning never strikes twice...
+ // 2025-03-03T09:00:49.234Z [ExperimentClient] [32minfo[39m: Regular session started: true
+ // 2025-03-03T09:00:49.236Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"0","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: true, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992445210793##TIMESTAMP_END##We all know that small cars are good for us. But so is cod liver oil. And jogging.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:50.229Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 13042
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:50.231Z [DenimClient] [32minfo[39m: 1 decrypting regular from 3
+ // 2025-03-03T09:00:50.233Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"3","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992450227260##TIMESTAMP_END##When frogs are croaking, then silence is becoming.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:51.233Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 14046
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:52.236Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 15049
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:53.237Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 16050
+[1] In behavior: BAZAAR, called with parameter false
+[1] In behavior: BAZAAR, called with parameter true
+ // 2025-03-03T09:00:54.240Z [DenimClient] [32minfo[39m: 1 decrypting regular from 3
+ // 2025-03-03T09:00:54.240Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 17053
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:54.241Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"3","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992454236718##TIMESTAMP_END##Concrete is, essentially, the color of bad weather.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:55.238Z [DenimClient] [32minfo[39m: 1 decrypting regular from 4
+ // 2025-03-03T09:00:55.239Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"4","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992455235836##TIMESTAMP_END##When all else fails, play dead.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:55.243Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 18056
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:56.240Z [DenimClient] [32minfo[39m: 1 decrypting regular from 4
+ // 2025-03-03T09:00:56.240Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"4","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992456237429##TIMESTAMP_END##He who lives by the crystal ball soon learns to eat ground glass.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:56.242Z [DenimClient] [32minfo[39m: 1 decrypting regular from 2
+ // 2025-03-03T09:00:56.243Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"2","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992456238729##TIMESTAMP_END##Don't put the cart before the horse.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:56.245Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 19058
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:57.247Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 20060
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:58.249Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 21062
+[1] In behavior: BAZAAR, called with parameter false
+[1] In behavior: BAZAAR, called with parameter true
+ // 2025-03-03T09:00:59.250Z [DenimClient] [32minfo[39m: 1 decrypting regular from 4
+ // 2025-03-03T09:00:59.252Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"4","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992459247022##TIMESTAMP_END##Don't put the cart before the horse.
+[1] In behavior: SILENT
+ // 2025-03-03T09:00:59.252Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 22065
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:00:59.254Z [DenimClient] [32minfo[39m: 1 decrypting regular from 2
+ // 2025-03-03T09:00:59.255Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"2","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992459246803##TIMESTAMP_END##Footprints on the sands of time are never made by sitting down.
+[1] In behavior: SILENT
+ // 2025-03-03T09:01:00.252Z [DenimClient] [32minfo[39m: 1 decrypting regular from 2
+ // 2025-03-03T09:01:00.253Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"2","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992460249132##TIMESTAMP_END##For whoever is lonely there is a tavern.
+[1] In behavior: SILENT
+ // 2025-03-03T09:01:00.254Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 23067
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:01:01.256Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 24069
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:01:02.258Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 25071
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:01:02.263Z [DenimClient] [32minfo[39m: 1 decrypting regular from 3
+ // 2025-03-03T09:01:02.265Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"3","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992462260374##TIMESTAMP_END##In every failure lies the seeds of success.
+[1] In behavior: SILENT
+ // 2025-03-03T09:01:03.262Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 26075
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:01:04.265Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 27078
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:01:05.269Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 28082
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:01:05.273Z [DenimClient] [32minfo[39m: 1 decrypting regular from 3
+ // 2025-03-03T09:01:05.274Z [DenimClient] [32minfo[39m: 1 decrypting prekey (new session) deniable from 2
+ // 2025-03-03T09:01:05.277Z [DenimClient] [32minfo[39m: Decrypted deniable message: ##TIMESTAMP_START##1740992457242262##TIMESTAMP_END##The frog does not drink up the pond in which it lives.
+ // 2025-03-03T09:01:05.277Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"3","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: false, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992465268752##TIMESTAMP_END##The only time to eat diet food is while you're waiting for the steak to cook.
+[1] In behavior: SILENT
+ // 2025-03-03T09:01:05.277Z [ExperimentClient] [32minfo[39m: Message received: From: {"name":"2","deviceId":1}, To: {"name":"1","deviceId":1}, Deniable: true, Type: TEXT 
+ Content: ##TIMESTAMP_START##1740992457242262##TIMESTAMP_END##The frog does not drink up the pond in which it lives.
+[1] In behavior: SILENT
+ // 2025-03-03T09:01:06.272Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Time elapsed 29085
+[1] In behavior: BAZAAR, called with parameter false
+ // 2025-03-03T09:01:08.275Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Current experiment run over
+ // 2025-03-03T09:01:08.275Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 report done, cleaning up
+ // 2025-03-03T09:01:08.275Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 closing connection with DenimServer
+ // 2025-03-03T09:01:08.279Z [ExperimentClient] [32minfo[39m: Connection to 127.0.0.1 closed
+ // 2025-03-03T09:01:08.280Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Socket closed
+ // 2025-03-03T09:01:08.280Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 Sent CLIENT_DONE to Dispatcher
+ // 2025-03-03T09:01:08.281Z [ExperimentClient] [32minfo[39m: ##SERVER_EXPERIMENT_DONE##
+Nvtg36WSGz6psOrTbiGOVa9VHBzGMN5s43EkRFM9rzXbjppc2r0pDsbBJmx9imCVwrHGqGixfLQpUSONTfA35HWX9BOxODlGRIZB
+ // 2025-03-03T09:01:08.281Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 SERVER_EXPERIMENT_DONE received
+ // 2025-03-03T09:01:08.281Z [ExperimentClient] [32minfo[39m: CLIENT_ID_1 exiting with code 0; ongoing connections: 0
+exited with code: 0
