@@ -1,28 +1,30 @@
-import re
 from math import ceil
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 
-Port = int
-Profile = dict[Port, float]
+Identifier = str
+Profile = dict[Identifier, float]
+LOCALHOST = "127.0.0.1"
 
 
-def print_result(profiles: dict[Port, Profile], settings: dict[str, int]):
+def print_result(profiles: dict[Identifier, Profile], settings: dict[str, str]):
     result = max(profiles[settings["target"]].items(), key=lambda x: x[1])
     print(f"Target: {settings['target']}\nActual: {settings['actual']}\nMost likely: {result[0]}\nWith propability: {round(result[1] * 100, 2)}%")
 
 
-def get_src_and_dst_port(info: str) -> dict[str, Port]:
-    # If this fails, you most likely have an error in your dataset
-    res = re.findall(r"(\d+)\s*>\s*(\d+).*", info)[0]
-    return {"src": int(res[0]), "dst": int(res[1])}
+def get_src_and_dst(row: Series) -> dict[str, Identifier]:
+    if row.Source == LOCALHOST or row.Destination == LOCALHOST:
+        return {"src": str(row.src_port), "dst": str(row.dst_port)}
+    else:
+        return {"src": row.Source, "dst": row.Destination}
+    
 
 
-def sda_profiling(settings: dict[str, int], data: DataFrame) -> DataFrame:
-    profiles: dict[Port, Profile] = {}
+def sda_profiling(settings: dict[str, str], data: DataFrame) -> DataFrame:
+    profiles: dict[Identifier, Profile] = {}
     initial_time = data.iloc[0].Time
     chunk_amount = ceil((data.iloc[-1].Time - initial_time) / settings["epoch"])
-    chunks: list[dict[str, list[Port]]] = [
+    chunks: list[dict[str, list[Identifier]]] = [
         _chunks_by_snd_rcv(
             data.loc[
                 (initial_time + chunk_num * settings["epoch"] < data.Time)
@@ -40,7 +42,7 @@ def sda_profiling(settings: dict[str, int], data: DataFrame) -> DataFrame:
     return DataFrame.from_dict(profiles).fillna(0)
 
     
-def _update_profile(sender: Port, senders_amount: int, receivers: list[Port], profiles: dict[Port, Profile]):
+def _update_profile(sender: Identifier, senders_amount: int, receivers: list[Identifier], profiles: dict[Identifier, Profile]):
     for receiver in receivers:
         if sender == receiver:
             continue
@@ -54,11 +56,11 @@ def _update_profile(sender: Port, senders_amount: int, receivers: list[Port], pr
         profiles[sender][receiver] += 1 / senders_amount
 
 
-def _chunks_by_snd_rcv(chunk: DataFrame, settings: dict[str, int]) -> dict[str, list[Port]]:
-    sr: dict[str, list[Port]] = {"src": [], "dst": []}
+def _chunks_by_snd_rcv(chunk: DataFrame, settings: dict[str, str]) -> dict[str, list[Identifier]]:
+    sr: dict[str, list[Identifier]] = {"src": [], "dst": []}
     for _, row in chunk.iterrows():
-        ports: dict[str, Port] = get_src_and_dst_port(row.Info)
-        if ports["src"] != settings["server_port"]:
+        ports: dict[str, Identifier] = get_src_and_dst(row)
+        if ports["src"] not in settings["server"]:
             sr["src"].append(ports["src"])
         else:
             sr["dst"].append(ports["dst"])

@@ -1,5 +1,5 @@
 from pandas import DataFrame
 
 
-def main(settings: dict[str, int], data: DataFrame):
+def main(settings: dict[str, str], data: DataFrame):
    pass 

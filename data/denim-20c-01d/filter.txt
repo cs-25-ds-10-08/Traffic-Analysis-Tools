@@ -1,1 +1,0 @@
-!tls && tcp.flags.syn != 1 && tcp.flags.fin != 1 && ((tcp.srcport >= 37600 && tcp.srcport <= 37900) || tcp.srcport == 8080) && ((tcp.dstport >= 37600 && tcp.dstport <= 37900) || tcp.dstport == 8080)
