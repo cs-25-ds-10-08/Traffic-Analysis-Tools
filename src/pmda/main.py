@@ -1,5 +1,8 @@
+from typing import Callable
 from pandas import DataFrame
 
+from helper.util import Settings
 
-def main(settings: dict[str, str], data: DataFrame):
-   pass 
+
+def main(settings: Settings, data: DataFrame, profiler: Callable[[Settings, DataFrame], DataFrame]):
+    pass

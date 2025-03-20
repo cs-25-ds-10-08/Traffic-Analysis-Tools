@@ -1,9 +1,13 @@
 import argparse
 import sys
 import json
-import pandas as pd
-
+from typing import Callable
+from pandas import DataFrame, read_csv
 from pathlib import Path
+
+from helper.util import Settings
+from helper.sda_profiling import sda_profiling
+from helper.sda_selected_profiling import sda_selected_profiling
 
 from nsda.main import main as nsda_main
 from pmda.main import main as pmda_main
@@ -28,18 +32,23 @@ def executor():
         required=True,
         help="The path to folder which MUST contain a data.csv and settings.json",
     )
+    parser.add_argument("--selected", action="store_true", help="Changes the way the SDA profiling is done")
 
     options = parser.parse_args(sys.argv[1:])
     with open(options.path / "settings.json") as file:
-        settings: dict[str, int] = json.load(file)
-    data: pd.DataFrame = pd.read_csv(options.path / "data.csv")
+        settings: Settings = json.load(file)
+    data: DataFrame = read_csv(options.path / "data.csv")
+
+    sda_profiler: Callable[[Settings, DataFrame], DataFrame] = (
+        sda_selected_profiling if options.selected else sda_profiling
+    )
 
     match options.tool:
         case "nsda":
-            nsda_main(settings, data)
+            nsda_main(settings, data, sda_profiler)
         case "pmda":
-            pmda_main(settings, data)
+            pmda_main(settings, data, sda_profiler)
         case "ssda":
             ssda_main(settings, data)
         case "sda":
-            sda_main(settings, data)
+            sda_main(settings, data, sda_profiler)
