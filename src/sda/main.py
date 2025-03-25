@@ -2,7 +2,6 @@ from typing import Callable
 from pandas import DataFrame
 
 from helper.util import Settings, print_result
-from helper.sda_profiling import sda_profiling
 
 
 def main(settings: Settings, data: DataFrame, profiler: Callable[[Settings, DataFrame], DataFrame]):

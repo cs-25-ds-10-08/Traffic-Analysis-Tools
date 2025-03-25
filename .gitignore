@@ -1,4 +1,4 @@
-*.pcapng
+data/**/*.pcapng.gz
 data/OLD
 
 # AUTO GENEREATED BY UV
