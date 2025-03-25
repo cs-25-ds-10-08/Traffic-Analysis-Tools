@@ -22,7 +22,11 @@ def print_result(profiles: dict[Identifier, Profile], settings: Settings):
 
 
 def get_src_and_dst(row: Series) -> dict[str, Identifier]:
-    if row.Source in LOCALHOST or row.Destination in LOCALHOST:
+    if is_local(row):
         return {"src": str(row.src_port), "dst": str(row.dst_port)}
     else:
         return {"src": row.Source, "dst": row.Destination}
+
+
+def is_local(s: Series) -> bool:
+    return s.Source in LOCALHOST or s.Destination in LOCALHOST

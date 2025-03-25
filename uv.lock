@@ -489,6 +489,7 @@ dependencies = [
     { name = "pandas-stubs" },
     { name = "pygmtools" },
     { name = "ruff" },
+    { name = "tqdm" },
 ]
 
 [package.metadata]
@@ -498,6 +499,7 @@ requires-dist = [
     { name = "pandas-stubs" },
     { name = "pygmtools", specifier = ">=0.5.3" },
     { name = "ruff", specifier = ">=0.9.6" },
+    { name = "tqdm", specifier = ">=4.67.1" },
 ]
 
 [[package]]
