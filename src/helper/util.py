@@ -8,12 +8,10 @@ class Settings(TypedDict):
     epoch: float
     server: list[str]
 
-
 Identifier = str
 Profile = dict[Identifier, float]
 
-
-LOCALHOST = "127.0.0.1"
+LOCALHOST = ["127.0.0.1", "::1"]
 
 
 def print_result(profiles: dict[Identifier, Profile], settings: Settings):
@@ -24,7 +22,7 @@ def print_result(profiles: dict[Identifier, Profile], settings: Settings):
 
 
 def get_src_and_dst(row: Series) -> dict[str, Identifier]:
-    if row.Source == LOCALHOST or row.Destination == LOCALHOST:
+    if row.Source in LOCALHOST or row.Destination in LOCALHOST:
         return {"src": str(row.src_port), "dst": str(row.dst_port)}
     else:
         return {"src": row.Source, "dst": row.Destination}

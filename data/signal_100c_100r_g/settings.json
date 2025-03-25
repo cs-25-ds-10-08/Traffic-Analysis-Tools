@@ -1,6 +1,6 @@
 {
-  "target": "45106",
-  "actual": "45118",
-  "epoch": 0.05,
+  "target": "39520",
+  "actual": "35322",
+  "epoch": 0.01,
   "server": ["4444"]
 }
