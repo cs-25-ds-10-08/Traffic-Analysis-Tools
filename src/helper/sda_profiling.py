@@ -5,12 +5,12 @@ from tqdm import tqdm
 import pandas as pd
 import numpy as np
 
-from helper.util import Identifier, Profile, Settings, get_src_and_dst, is_local
+from helper.util import Settings, is_local
 
 
 def sda_profiling(settings: Settings, data: DataFrame) -> DataFrame:
     local = is_local(data.iloc[0])
-    profiles: DataFrame = DataFrame()
+    profiles: DataFrame = DataFrame().astype(np.float32)
     initial_time = data.iloc[0].Time
     chunk_amount = ceil((data.iloc[-1].Time - initial_time) / settings["epoch"])
     for chunk_num in tqdm(range(0, chunk_amount), desc="Creating chunks"):
@@ -28,7 +28,6 @@ def sda_profiling(settings: Settings, data: DataFrame) -> DataFrame:
     # profiles = profiles.sort_index(axis=0).sort_index(axis=1)
     for label in profiles.index.intersection(profiles.columns):
         profiles.loc[label, label] = 0
-    # np.fill_diagonal(profiles.values, 0)
     print(profiles)
 
     return profiles
@@ -43,10 +42,16 @@ def _update_profile(
     receivers: DataFrame = chunk.loc[chunk[dst].isin([index for index in chunk[dst] if str(index) not in settings["server"]])]
     if senders.shape[0] == 0:
         return profiles
-    
-    profiles_update = pd.DataFrame(1 / senders.shape[0], index=pd.Index(senders[src]), columns=pd.Index(receivers[dst]))
-    profiles_update = profiles_update.groupby(level=0).sum().T.groupby(level=0).sum().T
-    profiles = profiles.add(profiles_update, fill_value=0).fillna(0)
 
+    profiles_update = pd.DataFrame(1 / senders.shape[0], index=pd.Index(senders[src]), columns=pd.Index(receivers[dst])).astype(np.float32)
+    profiles_update = profiles_update.groupby(level=0).sum().T.groupby(level=0).sum().T
+    
+    cols = profiles_update.columns.union(profiles.columns)
+    rows = profiles_update.index.union(profiles.index)
+    profiles = profiles.reindex(index=rows, columns=cols, fill_value=0.0)
+    profiles_update = profiles_update.reindex(index=rows, columns=cols, fill_value=0.0)
+
+    profiles.loc[:, :] = np.add(profiles.values, profiles_update.values, dtype=np.float32)
+    
     return profiles
 
