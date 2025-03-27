@@ -3,6 +3,7 @@ from pandas import DataFrame
 from tqdm import tqdm
 
 import pandas as pd
+import numpy as np
 
 from helper.util import Identifier, Profile, Settings, get_src_and_dst, is_local
 
@@ -24,6 +25,10 @@ def sda_profiling(settings: Settings, data: DataFrame) -> DataFrame:
         )
     profiles.index = profiles.index.astype(str)
     profiles.columns = profiles.columns.astype(str)
+    # profiles = profiles.sort_index(axis=0).sort_index(axis=1)
+    for label in profiles.index.intersection(profiles.columns):
+        profiles.loc[label, label] = 0
+    # np.fill_diagonal(profiles.values, 0)
     print(profiles)
 
     return profiles
