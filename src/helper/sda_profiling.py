@@ -8,7 +8,8 @@ from tqdm import tqdm
 
 
 def sda_profiling(settings: Settings, data: DataFrame) -> DataFrame:
-    profiles: dict[Identifier, Profile] = {}
+    local = is_local(data.iloc[0])
+    profiles: DataFrame = DataFrame().astype(np.float32)
     initial_time = data.iloc[0].Time
     chunk_amount = ceil((data.iloc[-1].Time - initial_time) / settings["epoch"])
     data["src_port"] = data["src_port"].astype(str)
