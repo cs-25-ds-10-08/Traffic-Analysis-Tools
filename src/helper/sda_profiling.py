@@ -1,11 +1,10 @@
 from math import ceil
-from pandas import DataFrame
+from pandas import DataFrame, Series
+from itertools import compress
+
+from helper.util import Identifier, Profile, Settings
+
 from tqdm import tqdm
-
-import pandas as pd
-import numpy as np
-
-from helper.util import Settings, is_local
 
 
 def sda_profiling(settings: Settings, data: DataFrame) -> DataFrame:
@@ -13,45 +12,47 @@ def sda_profiling(settings: Settings, data: DataFrame) -> DataFrame:
     profiles: DataFrame = DataFrame().astype(np.float32)
     initial_time = data.iloc[0].Time
     chunk_amount = ceil((data.iloc[-1].Time - initial_time) / settings["epoch"])
-    for chunk_num in tqdm(range(0, chunk_amount), desc="Creating chunks"):
-        profiles = _update_profile(
-            data.loc[
-                (initial_time + chunk_num * settings["epoch"] <= data.Time)
-                & (data.Time < initial_time + (chunk_num + 1) * settings["epoch"])
-            ],
-            local,
-            settings,
-            profiles
+    data["src_port"] = data["src_port"].astype(str)
+    data["dst_port"] = data["dst_port"].astype(str)
+
+    for chunk_num in tqdm(range(0, chunk_amount)):
+        start_time = initial_time + chunk_num * settings["epoch"]
+        end_time = start_time + settings["epoch"]
+
+        _update_profile(
+            *_chunks_by_snd_rcv(
+                data[(data.Time > start_time) & (data.Time <= end_time)],
+                settings,
+            ),
+            profiles,
         )
-    profiles.index = profiles.index.astype(str)
-    profiles.columns = profiles.columns.astype(str)
-    # profiles = profiles.sort_index(axis=0).sort_index(axis=1)
-    for label in profiles.index.intersection(profiles.columns):
-        profiles.loc[label, label] = 0
-    print(profiles)
-
-    return profiles
+    print(profiles.keys())
+    return DataFrame.from_dict(profiles).fillna(0)
 
 
-def _update_profile(
-    chunk: DataFrame, local: bool, settings: Settings, profiles: DataFrame
-) -> DataFrame:
-    src = "src_port" if local else "Source"
-    dst = "dst_port" if local else "Destination"
-    senders: DataFrame = chunk.loc[chunk[src].isin([index for index in chunk[src] if str(index) not in settings["server"]])]
-    receivers: DataFrame = chunk.loc[chunk[dst].isin([index for index in chunk[dst] if str(index) not in settings["server"]])]
-    if senders.shape[0] == 0:
-        return profiles
+def _update_profile(senders: list[Identifier], receivers: list[Identifier], profiles: dict[Identifier, Profile]):
+    for sender in senders:
+        for receiver in receivers:
+            if sender == receiver:
+                continue
 
-    profiles_update = pd.DataFrame(1 / senders.shape[0], index=pd.Index(senders[src]), columns=pd.Index(receivers[dst])).astype(np.float32)
-    profiles_update = profiles_update.groupby(level=0).sum().T.groupby(level=0).sum().T
-    
-    cols = profiles_update.columns.union(profiles.columns)
-    rows = profiles_update.index.union(profiles.index)
-    profiles = profiles.reindex(index=rows, columns=cols, fill_value=0.0)
-    profiles_update = profiles_update.reindex(index=rows, columns=cols, fill_value=0.0)
+            if sender not in profiles:
+                profiles[sender] = {}
 
-    profiles.loc[:, :] = np.add(profiles.values, profiles_update.values, dtype=np.float32)
-    
-    return profiles
+            if receiver not in profiles[sender]:
+                profiles[sender][receiver] = 0
 
+            profiles[sender][receiver] += 1 / len(senders)
+
+
+def _chunks_by_snd_rcv(chunk, settings: Settings) -> tuple[list[Identifier], list[Identifier]]:
+    if chunk.shape[0] <= 1:
+        return [], []
+
+    src_ports = chunk["src_port"]
+    dst_ports = chunk["dst_port"]
+
+    receivers_mask = [port in settings["server"] for port in src_ports]
+    senders_mask = map(lambda x: not x, receivers_mask)
+
+    return list(compress(src_ports, senders_mask)), list(compress(dst_ports, receivers_mask))

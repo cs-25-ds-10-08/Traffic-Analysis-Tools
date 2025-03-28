@@ -37,7 +37,9 @@ def executor():
     options = parser.parse_args(sys.argv[1:])
     with open(options.path / "settings.json") as file:
         settings: Settings = json.load(file)
-    data: DataFrame = read_csv(options.path / "data.csv")
+    data: DataFrame = read_csv(
+        options.path / "data.csv", usecols=["Time", "Source", "Destination", "src_port", "dst_port"]
+    )
 
     sda_profiler: Callable[[Settings, DataFrame], DataFrame] = (
         sda_selected_profiling if options.selected else sda_profiling
@@ -52,3 +54,7 @@ def executor():
             ssda_main(settings, data)
         case "sda":
             sda_main(settings, data, sda_profiler)
+
+
+if __name__ == "__main__":
+    executor()
