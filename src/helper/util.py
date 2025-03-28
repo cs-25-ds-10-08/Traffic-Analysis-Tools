@@ -27,3 +27,7 @@ def get_src_and_dst(row: Series) -> dict[str, Identifier]:
         return {"src": str(row["src_port"]), "dst": str(row["dst_port"])}
     else:
         return {"src": row["Source"], "dst": row["Destination"]}
+
+
+def is_local(row: Series) -> bool:
+    return row["Source"] in LOCALHOST or row["Destination"] in LOCALHOST
