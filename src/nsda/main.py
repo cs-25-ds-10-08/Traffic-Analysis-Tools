@@ -12,6 +12,6 @@ def main(settings: Settings, data: DataFrame, profiler: Callable[[Settings, Data
     profiles = profiler(settings, data)
 
     print_result(
-        DataFrame(pygm.sinkhorn(profiles.to_numpy()), index=profiles.index, columns=profiles.columns).to_dict(),
+        DataFrame(pygm.sinkhorn(profiles.to_numpy()), index=profiles.index, columns=profiles.columns).to_dict(),  # type: ignore
         settings,
     )
