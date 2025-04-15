@@ -31,7 +31,7 @@ def executor():
         "--path",
         type=Path,
         required=True,
-        help="The path to folder which MUST contain a data.csv and settings.json",
+        help="The path to folder which MUST contain a data.csv.gz and settings.json",
     )
     parser.add_argument("--selected", "-s", action="store_true", help="Changes the way the SDA profiling is done")
 
@@ -39,7 +39,9 @@ def executor():
     with open(options.path / "settings.json") as file:
         settings: Settings | DenimSettings = json.load(file)
     data: DataFrame = read_csv(
-        options.path / "data.csv", usecols=["Time", "Source", "Destination", "src_port", "dst_port"]
+        options.path / "data.csv.gz",
+        usecols=["Time", "Source", "Destination", "src_port", "dst_port"],
+        compression="gzip",
     )
 
     sda_profiler: Callable[[Settings, DataFrame], DataFrame] = (
