@@ -64,35 +64,34 @@ def _make_profiles(burst_events: DataFrame, receivers: DataFrame, n: int) -> dic
         for j in range(row.Index + 1, burst_events.shape[0]):
             if burst_events.loc[row.Index].id == burst_events.iloc[j].id:
                 next = j
-                break
-        burst_events_slice = burst_events.iloc[
-            burst_events.time.searchsorted(row.time) : burst_events.time.searchsorted(
-                burst_events.iloc[next].time, side="right"
-            )
-        ]
-        if burst_events_slice.empty:
-            continue
-        burst_events_slice = burst_events_slice.drop_duplicates(subset="id", keep="last")
+                burst_events_slice = burst_events.iloc[
+                    burst_events.time.searchsorted(row.time) : burst_events.time.searchsorted(
+                        burst_events.iloc[next].time, side="right"
+                    )
+                ]
+                if burst_events_slice.empty:
+                    break
+                burst_events_slice = burst_events_slice.drop_duplicates(subset="id", keep="last")
 
-        pr = receivers.iloc[
-            receivers.time.searchsorted(row.time) : receivers.time.searchsorted(
-                burst_events_slice.iloc[-1].time, side="right"
-            )
-        ]
-        if pr.empty:
-            continue
+                pr = receivers.iloc[
+                    receivers.time.searchsorted(row.time) : receivers.time.searchsorted(
+                        burst_events_slice.iloc[-1].time, side="right"
+                    )
+                ]
+                if pr.empty:
+                    continue
 
-        potential_receivers = _filter_potential_receivers(
-            burst_events_slice,
-            pr,
-            row.id,
-            n,
-        )
-        if potential_receivers.empty:
-            continue
+                potential_receivers = _filter_potential_receivers(
+                    burst_events_slice,
+                    pr,
+                    row.id,
+                    n,
+                )
+                if potential_receivers.empty:
+                    continue
 
-        for potential_receiver in potential_receivers.itertuples():
-            profiles[row.id][potential_receiver.id] += 1 / potential_receivers.shape[0]
+                for potential_receiver in potential_receivers.itertuples():
+                    profiles[row.id][potential_receiver.id] += 1 / potential_receivers.shape[0]
 
     return profiles
 
@@ -109,9 +108,8 @@ def _filter_potential_receivers(burst_events: DataFrame, receivers: DataFrame, i
             continue
         if receiver.id in ids and receiver.time < burst_events.loc[burst_events.id == receiver.id].iloc[0].time:
             counts[receiver.id] += 1
-    return burst_events.loc[
-        burst_events.index.isin([row.index for row in burst_events.itertuples() if counts[row.id] >= 0])
-    ]
+
+    return burst_events[[counts[row.id] >= n for row in burst_events.itertuples()]]
 
 
 def _update_candidate_buffer(
