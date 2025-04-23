@@ -24,7 +24,7 @@ def sda_selected_profiling(settings: DenimSettings, data: DataFrame) -> DataFram
 
     avg = 0
 
-    for row in tqdm(data.itertuples(), total=data.shape[0], desc="Selected profiling"):
+    for row in tqdm(data.itertuples(), total=data.shape[0], desc="Preparing senders and receivers"):
         time: float = row.Time  # type: ignore
         elapsed_time = time - prev_time
         burst_events_candidates = _update_candidate_buffer(burst_events_candidates, elapsed_time)
@@ -91,7 +91,10 @@ def _make_profiles(burst_events: DataFrame, receivers: DataFrame, n: int) -> dic
                     continue
 
                 for potential_receiver in potential_receivers.itertuples():
-                    profiles[row.id][potential_receiver.id] += 1 / potential_receivers.shape[0]
+                    if row.id != potential_receiver.id:
+                        profiles[row.id][potential_receiver.id] += 1 / potential_receivers.shape[0]
+
+                break
 
     return profiles
 

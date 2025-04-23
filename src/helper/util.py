@@ -24,6 +24,7 @@ def print_result(profiles: dict[Identifier, Profile], settings: Settings):
     print(
         f"Target: {settings['target']}\nActual: {settings['actual']}\nMost likely: {result[0]}\nWith propability: {round(result[1] * 100, 2)}%"
     )
+    # print(profiles)
 
 
 def get_src_and_dst(row) -> dict[str, Identifier]:
