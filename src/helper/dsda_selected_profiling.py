@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import Counter, defaultdict
 from typing import TypedDict
 from pandas import DataFrame
 from tqdm import tqdm
@@ -17,7 +17,9 @@ def sda_selected_profiling(settings: DenimSettings, data: DataFrame) -> DataFram
     server = settings["server"]
 
     burst_events: Events = {"id": [], "time": []}
-    burst_events_candidates: defaultdict[Identifier, list[RemaningTime]] = defaultdict(list[RemaningTime])
+    burst_events_candidates: defaultdict[Identifier, list[tuple[RemaningTime, float]]] = defaultdict(
+        list[tuple[RemaningTime, float]]
+    )
     receivers: Events = {"id": [], "time": []}
 
     prev_time: float = data.iloc[0].Time
@@ -37,7 +39,7 @@ def sda_selected_profiling(settings: DenimSettings, data: DataFrame) -> DataFram
             receivers["id"].append(receiver)
             receivers["time"].append(time)
         else:
-            burst_events_candidates[sender].append(settings["dt"])
+            burst_events_candidates[sender].append((settings["dt"], time))
             _mayber_append(
                 burst_events,
                 burst_events_candidates,
@@ -48,6 +50,8 @@ def sda_selected_profiling(settings: DenimSettings, data: DataFrame) -> DataFram
 
         prev_time = time
         avg += len(burst_events)
+
+    print(Counter(burst_events["id"]))
 
     profiles = _make_profiles(DataFrame(burst_events), DataFrame(receivers), settings["n"])
 
@@ -116,22 +120,27 @@ def _filter_potential_receivers(burst_events: DataFrame, receivers: DataFrame, i
 
 
 def _update_candidate_buffer(
-    sender_buffer: defaultdict[Identifier, list[RemaningTime]], elapsed_time: float
-) -> defaultdict[Identifier, list[RemaningTime]]:
+    sender_buffer: defaultdict[Identifier, list[tuple[RemaningTime, float]]], elapsed_time: float
+) -> defaultdict[Identifier, list[tuple[RemaningTime, float]]]:
     for sender, times in sender_buffer.items():
-        sender_buffer[sender] = [time for time in times if time - elapsed_time > 0]
+        sender_buffer[sender] = [
+            (remaning_time[0] - elapsed_time, remaning_time[1])
+            for remaning_time in times
+            if remaning_time[0] - elapsed_time > 0
+        ]
 
     return sender_buffer
 
 
 def _mayber_append(
     burst_events: Events,
-    burst_events_candidates: defaultdict[Identifier, list[RemaningTime]],
+    burst_events_candidates: defaultdict[Identifier, list[tuple[RemaningTime, float]]],
     sender: Identifier,
     n: int,
     time: float,
 ):
     if len(burst_events_candidates[sender]) == n:
+        print(f"{sender}: {[time[1] for time in burst_events_candidates[sender]]} \n")
         burst_events["id"].append(sender)
         burst_events["time"].append(time)
         burst_events_candidates.pop(sender)
