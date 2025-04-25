@@ -17,14 +17,10 @@ def sda_selected_profiling(settings: DenimSettings, data: DataFrame) -> DataFram
     server = settings["server"]
 
     burst_events: Events = {"id": [], "time": []}
-    burst_events_candidates: defaultdict[Identifier, list[tuple[RemaningTime, float]]] = defaultdict(
-        list[tuple[RemaningTime, float]]
-    )
+    burst_events_candidates: defaultdict[Identifier, list[RemaningTime]] = defaultdict(list[RemaningTime])
     receivers: Events = {"id": [], "time": []}
 
     prev_time: float = data.iloc[0].Time
-
-    avg = 0
 
     for row in tqdm(data.itertuples(), total=data.shape[0], desc="Preparing senders and receivers"):
         time: float = row.Time  # type: ignore
@@ -39,7 +35,7 @@ def sda_selected_profiling(settings: DenimSettings, data: DataFrame) -> DataFram
             receivers["id"].append(receiver)
             receivers["time"].append(time)
         else:
-            burst_events_candidates[sender].append((settings["dt"], time))
+            burst_events_candidates[sender].append(settings["dt"])
             _mayber_append(
                 burst_events,
                 burst_events_candidates,
@@ -49,13 +45,10 @@ def sda_selected_profiling(settings: DenimSettings, data: DataFrame) -> DataFram
             )
 
         prev_time = time
-        avg += len(burst_events)
 
     print(Counter(burst_events["id"]))
 
     profiles = _make_profiles(DataFrame(burst_events), DataFrame(receivers), settings["n"])
-
-    print(f"Average sender buffer len: {avg / data.shape[0]}")
 
     return DataFrame.from_dict(profiles).fillna(0)
 
@@ -94,9 +87,10 @@ def _make_profiles(burst_events: DataFrame, receivers: DataFrame, n: int) -> dic
                 if potential_receivers.empty:
                     continue
 
+                amount = potential_receivers.shape[0] - Counter(potential_receivers["id"])[row.id]
                 for potential_receiver in potential_receivers.itertuples():
                     if row.id != potential_receiver.id:
-                        profiles[row.id][potential_receiver.id] += 1 / potential_receivers.shape[0]
+                        profiles[row.id][potential_receiver.id] += 1 / amount
 
                 break
 
@@ -120,13 +114,11 @@ def _filter_potential_receivers(burst_events: DataFrame, receivers: DataFrame, i
 
 
 def _update_candidate_buffer(
-    sender_buffer: defaultdict[Identifier, list[tuple[RemaningTime, float]]], elapsed_time: float
-) -> defaultdict[Identifier, list[tuple[RemaningTime, float]]]:
+    sender_buffer: defaultdict[Identifier, list[RemaningTime]], elapsed_time: float
+) -> defaultdict[Identifier, list[RemaningTime]]:
     for sender, times in sender_buffer.items():
         sender_buffer[sender] = [
-            (remaning_time[0] - elapsed_time, remaning_time[1])
-            for remaning_time in times
-            if remaning_time[0] - elapsed_time > 0
+            remaning_time - elapsed_time for remaning_time in times if remaning_time - elapsed_time > 0
         ]
 
     return sender_buffer
@@ -134,13 +126,13 @@ def _update_candidate_buffer(
 
 def _mayber_append(
     burst_events: Events,
-    burst_events_candidates: defaultdict[Identifier, list[tuple[RemaningTime, float]]],
+    burst_events_candidates: defaultdict[Identifier, list[RemaningTime]],
     sender: Identifier,
     n: int,
     time: float,
 ):
     if len(burst_events_candidates[sender]) == n:
-        print(f"{sender}: {[time[1] for time in burst_events_candidates[sender]]} \n")
+        # print(f"{sender}: {[time[1] for time in burst_events_candidates[sender]]} \n")
         burst_events["id"].append(sender)
         burst_events["time"].append(time)
         burst_events_candidates.pop(sender)
