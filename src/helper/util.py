@@ -1,16 +1,18 @@
 from typing import TypedDict
 
 
-class Settings(TypedDict):
+class CommonSettings(TypedDict):
     target: str
     actual: str
-    epoch: float
     server: list[str]
 
 
-class DenimSettings(Settings):
+class Settings(CommonSettings):
+    epoch: float
+
+
+class DenimSettings(CommonSettings):
     dt: float
-    n: int
 
 
 Identifier = str
