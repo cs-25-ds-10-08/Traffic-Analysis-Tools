@@ -59,6 +59,8 @@ def sda_selected_profiling(settings: DenimSettings, data: DataFrame) -> DataFram
 
     profiles = _make_profiles(DataFrame(burst_events), DataFrame(receivers))
 
+    print(DataFrame.from_dict(profiles).fillna(0))
+
     return DataFrame.from_dict(profiles).fillna(0)
 
 

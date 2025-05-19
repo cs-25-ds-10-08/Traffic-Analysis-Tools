@@ -46,7 +46,8 @@ def executor():
     )
 
     data: DataFrame = read_csv(data_files[0], usecols=["Time", "Source", "Destination", "src_port", "dst_port"])
-    settings: Settings | DenimSettings = json.load(settings_files[0])
+    with open(settings_files[0]) as file:
+        settings: Settings | DenimSettings = json.load(file)
 
     sda_profiler: Callable[[Settings, DataFrame], DataFrame] = (
         sda_selected_profiling if options.selected else sda_profiling
