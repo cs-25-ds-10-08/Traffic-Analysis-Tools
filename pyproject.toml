@@ -11,7 +11,7 @@ dependencies = [
     "mypy>=1.15.0",
     "pandas",
     "pandas-stubs",
-    "pygmtools>=0.5.3",
+    "pygmtools@git+https://github.com/Thinklab-SJTU/pygmtools.git",
     "ruff>=0.9.6",
     "tqdm>=4.67.1",
 ]
@@ -35,3 +35,6 @@ docstring-code-format = true
 
 [tool.ruff.lint]
 preview = true
+
+[tool.hatch.metadata]
+allow-direct-references = true
