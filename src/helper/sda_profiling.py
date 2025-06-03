@@ -14,8 +14,6 @@ def sda_profiling(settings: Settings, data: DataFrame) -> DataFrame:
     chunk_amount = ceil((data.iloc[-1].Time - initial_time) / settings["epoch"])
     data[src] = data[src].astype(str)
     data[dst] = data[dst].astype(str)
-    avg_chunk_size = 0
-    skipped = 0
 
     for chunk_num in tqdm(range(0, chunk_amount)):
         start_time = initial_time + chunk_num * settings["epoch"]
@@ -23,16 +21,13 @@ def sda_profiling(settings: Settings, data: DataFrame) -> DataFrame:
         chunk = data.iloc[data.Time.searchsorted(start_time) : data.Time.searchsorted(end_time, side="right")]
 
         if chunk.shape[0] <= 1:
-            skipped += 1
             continue
 
         _update_profile(
             *_chunks_by_snd_rcv(chunk[src], chunk[dst], settings["server"]),
             profiles,
         )
-        avg_chunk_size += chunk.shape[0]
 
-    print(f"Average chunk size: {avg_chunk_size / (chunk_amount - skipped)}")
     return DataFrame.from_dict(profiles).fillna(0)
 
 

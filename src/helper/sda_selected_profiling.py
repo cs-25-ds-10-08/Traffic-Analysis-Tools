@@ -15,8 +15,6 @@ def sda_selected_profiling(settings: Settings, data: DataFrame) -> DataFrame:
 
     prev_time = data.iloc[0].Time
 
-    avg = 0
-
     for row in tqdm(data.itertuples(), total=data.shape[0], desc="Selected profiling"):
         sender_buffer = _update_buffer(sender_buffer, row.Time - prev_time)  # type: ignore
 
@@ -28,9 +26,6 @@ def sda_selected_profiling(settings: Settings, data: DataFrame) -> DataFrame:
             sender_buffer.append((src_dst["src"], epoch))
 
         prev_time = row.Time
-        avg += len(sender_buffer)
-
-    print(f"Average sender buffer len: {avg / data.shape[0]}")
 
     return DataFrame.from_dict(profiles).fillna(0)
 

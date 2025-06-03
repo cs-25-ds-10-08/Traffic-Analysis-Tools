@@ -55,11 +55,7 @@ def sda_selected_profiling(settings: DenimSettings, data: DataFrame) -> DataFram
         sorted_combined = sorted(combined, key=lambda x: x[1])
         burst_events["id"], burst_events["time"], burst_events["size"] = map(list, zip(*sorted_combined))
 
-    print(Counter(burst_events["id"]))
-
     profiles = _make_profiles(DataFrame(burst_events), DataFrame(receivers))
-
-    print(DataFrame.from_dict(profiles).fillna(0))
 
     return DataFrame.from_dict(profiles).fillna(0)
 
@@ -69,35 +65,28 @@ def _make_profiles(burst_events: DataFrame, receivers: DataFrame) -> dict[Identi
 
     for row in tqdm(burst_events.itertuples(), total=burst_events.shape[0], desc="Making profiles"):
         for j in range(row.Index + 1, burst_events.shape[0]):  # type: ignore
-            if row.id == burst_events.iloc[j].id:
-                start = row.time
-                end = burst_events.iloc[j].time
+            if row.id != burst_events.iloc[j].id:
+                continue
+            start = row.time
+            end = burst_events.iloc[j].time
 
-                burst_events_slice = burst_events.iloc[
-                    burst_events.time.searchsorted(start) : burst_events.time.searchsorted(end, side="right")
-                ]
-                if burst_events_slice.empty:
-                    break
-                burst_events_slice = burst_events_slice.drop_duplicates(subset="id", keep="last")
+            burst_events_slice = burst_events.iloc[
+                burst_events.time.searchsorted(start) : burst_events.time.searchsorted(end, side="right")
+            ]
+            receiver_slice = receivers.iloc[
+                receivers.time.searchsorted(start) : receivers.time.searchsorted(end, side="right")
+            ]
+            potential_receivers = _filter_potential_receivers(
+                burst_events_slice,
+                receiver_slice,
+                row.id,  # type: ignore
+                row.size,  # type: ignore
+            )
 
-                pr = receivers.iloc[receivers.time.searchsorted(start) : receivers.time.searchsorted(end, side="right")]
-                if pr.empty:
-                    break
+            for potential_receiver in potential_receivers.itertuples():
+                profiles[row.id][potential_receiver.id] += 1 / potential_receivers.shape[0]  # type: ignore
 
-                potential_receivers = _filter_potential_receivers(
-                    burst_events_slice,
-                    pr,
-                    row.id,  # type: ignore
-                    row.size,  # type: ignore
-                )
-                if potential_receivers.empty:
-                    continue
-
-                potential_receivers = potential_receivers[potential_receivers["id"] != row.id]
-                for potential_receiver in potential_receivers.itertuples():
-                    profiles[row.id][potential_receiver.id] += 1 / potential_receivers.shape[0]  # type: ignore
-
-                break
+            break
 
     return profiles
 
@@ -108,18 +97,16 @@ def _filter_potential_receivers(burst_events: DataFrame, receivers: DataFrame, i
     i = burst_events.shape[0] - 1
 
     for receiver in receivers.iloc[::-1].itertuples():
-        while i >= 0:
+        while i >= 0 and receiver.time < burst_events.iloc[i].time:
             burst_event = burst_events.iloc[i]
-            if receiver.time < burst_event.time:
-                if burst_event["size"] <= count and burst_event.id not in counts:
-                    counts[burst_event.id] = 0
-                i -= 1
-            else:
-                break
+            if burst_event["size"] <= count and burst_event.id not in counts:
+                counts[burst_event.id] = 0
+            i -= 1
 
         if receiver.id == id:
             count += 1
         elif receiver.id in counts:
             counts[receiver.id] += 1
 
-    return burst_events[[row.id in counts and counts[row.id] >= n for row in burst_events.itertuples()]]
+    potential_receivers = burst_events[[row.id in counts and counts[row.id] >= n for row in burst_events.itertuples()]]
+    return potential_receivers.drop_duplicates(subset="id")
